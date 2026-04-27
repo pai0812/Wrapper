@@ -15,7 +15,7 @@ FRAUDSHIELD_URL = os.environ.get("FRAUDSHIELD_URL", "https://frauddetectionn.up.
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 VALID_API_KEYS = set(os.environ.get("VALID_API_KEYS", "").split(","))
 
-groq_client = Groq(api_key=GROQ_API_KEY)
+groq_client = None
 
 # === AUTH MIDDLEWARE ===
 def require_api_key(f):
@@ -50,7 +50,7 @@ Berikan penjelasan singkat (3-4 kalimat) dalam Bahasa Indonesia yang:
 
 Jawab langsung tanpa pembuka atau penutup."""
 
-        chat = groq_client.chat.completions.create(
+        chat = get_groq_client().chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=300,
@@ -176,3 +176,9 @@ def keygen():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5001))
     app.run(host="0.0.0.0", port=port)
+
+def get_groq_client():
+    global groq_client
+    if groq_client is None:
+        groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY", ""))
+    return groq_client
