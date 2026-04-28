@@ -5,7 +5,7 @@ import requests
 import os
 import secrets
 import string
-from groq import Groq
+
 
 app = Flask(__name__)
 CORS(app)
@@ -15,7 +15,7 @@ FRAUDSHIELD_URL = os.environ.get("FRAUDSHIELD_URL", "https://frauddetectionn.up.
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 VALID_API_KEYS = set(os.environ.get("VALID_API_KEYS", "").split(","))
 
-groq_client = None
+
 
 # === AUTH MIDDLEWARE ===
 def require_api_key(f):
@@ -50,13 +50,21 @@ Berikan penjelasan singkat (3-4 kalimat) dalam Bahasa Indonesia yang:
 
 Jawab langsung tanpa pembuka atau penutup."""
 
-        chat = get_groq_client().chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=300,
-            temperature=0.4
+        resp = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "llama-3.3-70b-versatile",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 300,
+                "temperature": 0.4
+            },
+            timeout=15
         )
-        return chat.choices[0].message.content.strip()
+        return resp.json()["choices"][0]["message"]["content"].strip()
     except Exception as e:
         return f"Penjelasan tidak tersedia: {str(e)}"
 
@@ -88,7 +96,7 @@ def home():
 @app.route("/v1/health", methods=["GET"])
 def health():
     try:
-        r = requests.get(f"{FRAUDSHIELD_URL}/health", timeout=5)
+        r = requests.get(f"{FRAUDSHIELD_URL}/stats", timeout=5)
         model_status = "online" if r.status_code == 200 else "degraded"
     except:
         model_status = "offline"
@@ -177,8 +185,3 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5001))
     app.run(host="0.0.0.0", port=port)
 
-def get_groq_client():
-    global groq_client
-    if groq_client is None:
-        groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY", ""))
-    return groq_client
