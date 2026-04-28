@@ -13,7 +13,7 @@ CORS(app)
 # === CONFIG ===
 FRAUDSHIELD_URL = os.environ.get("FRAUDSHIELD_URL", "https://frauddetectionn.up.railway.app")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
-VALID_API_KEYS = set(os.environ.get("VALID_API_KEYS", "").split(","))
+VALID_API_KEYS = set(k.strip() for k in os.environ.get("VALID_API_KEYS", "").split(","))
 
 
 
